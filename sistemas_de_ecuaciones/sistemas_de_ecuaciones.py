@@ -1,36 +1,37 @@
 import reflex as rx
 import numpy as np
 from typing import List
+from fractions import Fraction
 
 class State(rx.State):
     m: int = 2
     n: int = 2
-    matrix_values: List[List[float]] = [[0.0 for _ in range(2)] for _ in range(2)]
-    constants_values: List[float] = [0.0 for _ in range(2)]
+    matrix_values: List[List[str]] = [["0" for _ in range(2)] for _ in range(2)]
+    constants_values: List[str] = ["0" for _ in range(2)]
     result: str = ""
     is_random: bool = False
     is_dark_theme: bool = False
 
     def update_matrix(self):
-        self.matrix_values = [[0.0 for _ in range(self.n)] for _ in range(self.m)]
-        self.constants_values = [0.0 for _ in range(self.m)]
+        self.matrix_values = [["0" for _ in range(self.n)] for _ in range(self.m)]
+        self.constants_values = ["0" for _ in range(self.m)]
 
     def set_matrix_value(self, i: int, j: int, value: str):
-        try:
-            self.matrix_values[i][j] = float(value)
-        except ValueError:
-            pass
+        self.matrix_values[i][j] = value
 
     def set_constant_value(self, i: int, value: str):
+        self.constants_values[i] = value
+
+    def parse_fraction(self, value: str) -> float:
         try:
-            self.constants_values[i] = float(value)
+            return float(Fraction(value))
         except ValueError:
-            pass
+            return 0.0
 
     def solve_system(self):
         try:
-            matrix = np.array(self.matrix_values, dtype=float)
-            constants = np.array(self.constants_values, dtype=float)
+            matrix = np.array([[self.parse_fraction(val) for val in row] for row in self.matrix_values])
+            constants = np.array([self.parse_fraction(val) for val in self.constants_values])
             A = matrix
             b = constants
 
@@ -44,19 +45,19 @@ class State(rx.State):
             else:
                 try:
                     solution = np.linalg.solve(A, b)
-                    self.result = "Solución:\n" + "\n".join([f"x{i+1} = {sol:.4f}" for i, sol in enumerate(solution)])
+                    self.result = "Solución:\n" + "\n".join([f"x{i+1} = {Fraction(sol).limit_denominator()}" for i, sol in enumerate(solution)])
                 except np.linalg.LinAlgError:
                     self.result = "El sistema no tiene una solución única (matriz singular)."
         except ValueError:
-            self.result = "Error: Por favor, ingrese números válidos en todas las celdas."
+            self.result = "Error: Por favor, ingrese números o fracciones válidas en todas las celdas."
 
     def solve_random(self):
         self.is_random = True
         coefficients = np.random.randint(-10, 11, size=(self.m, self.n)).astype(float)
         constants = np.random.randint(-10, 11, size=(self.m,)).astype(float)
         
-        self.matrix_values = coefficients.tolist()
-        self.constants_values = constants.tolist()
+        self.matrix_values = [[str(Fraction(val).limit_denominator()) for val in row] for row in coefficients.tolist()]
+        self.constants_values = [str(Fraction(val).limit_denominator()) for val in constants.tolist()]
         
         self.solve_system()
 
@@ -103,9 +104,8 @@ def index():
                         rx.foreach(
                             row,
                             lambda cell, j: rx.input(
-                                value=str(cell),
+                                value=cell,
                                 on_change=lambda v: State.set_matrix_value(i, j, v),
-                                type_="number",
                                 width="60px",
                             )
                         )
@@ -118,9 +118,8 @@ def index():
                     rx.foreach(
                         State.constants_values,
                         lambda cell, i: rx.input(
-                            value=str(cell),
+                            value=cell,
                             on_change=lambda v: State.set_constant_value(i, v),
-                            type_="number",
                             width="60px",
                         )
                     )

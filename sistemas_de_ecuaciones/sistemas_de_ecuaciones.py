@@ -9,6 +9,7 @@ class State(rx.State):
     constants_values: List[float] = [0.0 for _ in range(2)]
     result: str = ""
     is_random: bool = False
+    is_dark_theme: bool = False
 
     def update_matrix(self):
         self.matrix_values = [[0.0 for _ in range(self.n)] for _ in range(self.m)]
@@ -18,13 +19,13 @@ class State(rx.State):
         try:
             self.matrix_values[i][j] = float(value)
         except ValueError:
-            pass  # Ignorar entradas no válidas
+            pass
 
     def set_constant_value(self, i: int, value: str):
         try:
             self.constants_values[i] = float(value)
         except ValueError:
-            pass  # Ignorar entradas no válidas
+            pass
 
     def solve_system(self):
         try:
@@ -59,13 +60,39 @@ class State(rx.State):
         
         self.solve_system()
 
+    def toggle_theme(self):
+        self.is_dark_theme = not self.is_dark_theme
+
 def index():
-    return rx.center(  # Envolvemos todo el contenido en rx.center
+    return rx.box(
         rx.vstack(
-            rx.heading("Solucionador de Sistemas de Ecuaciones"),
+            rx.flex(
+                rx.box(
+                    rx.heading("Solucionador de Sistemas de Ecuaciones", size="lg"),
+                    width="100%",
+                    text_align="center",
+                ),
+                rx.box(
+                    rx.button(
+                        rx.cond(
+                            State.is_dark_theme,
+                            rx.icon(tag="sun"),
+                            rx.icon(tag="moon")
+                        ),
+                        on_click=State.toggle_theme,
+                        variant="ghost",
+                    ),
+                    position="absolute",
+                    right="1em",
+                    top="1em",
+                ),
+                width="100%",
+                position="relative",
+                padding_y="4",
+            ),
             rx.hstack(
-                rx.input(placeholder="Número de ecuaciones", type="number", value=State.m, on_change=State.set_m),
-                rx.input(placeholder="Número de variables", type="number", value=State.n, on_change=State.set_n),
+                rx.input(placeholder="Número de ecuaciones", type_="number", value=State.m, on_change=State.set_m),
+                rx.input(placeholder="Número de variables", type_="number", value=State.n, on_change=State.set_n),
             ),
             rx.button("Crear matriz", on_click=State.update_matrix),
             rx.vstack(
@@ -78,7 +105,7 @@ def index():
                             lambda cell, j: rx.input(
                                 value=str(cell),
                                 on_change=lambda v: State.set_matrix_value(i, j, v),
-                                type="number",
+                                type_="number",
                                 width="60px",
                             )
                         )
@@ -93,7 +120,7 @@ def index():
                         lambda cell, i: rx.input(
                             value=str(cell),
                             on_change=lambda v: State.set_constant_value(i, v),
-                            type="number",
+                            type_="number",
                             width="60px",
                         )
                     )
@@ -111,11 +138,15 @@ def index():
                     rx.text(State.constants_values),
                 ),
             ),
-            width="100%",  # Asegura que el vstack ocupe todo el ancho disponible
-            align_items="center",  # Centra los elementos horizontalmente dentro del vstack
+            width="100%",
+            align_items="center",
+            spacing="4",
         ),
-        width="100%",  # Asegura que el center ocupe todo el ancho de la página
-        height="100vh",  # Hace que el center ocupe toda la altura de la ventana
+        width="100%",
+        min_height="100vh",
+        padding="4",
+        background_color=rx.cond(State.is_dark_theme, "#1a202c", "white"),
+        color=rx.cond(State.is_dark_theme, "white", "black"),
     )
 
 app = rx.App()

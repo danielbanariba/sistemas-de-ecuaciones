@@ -9,6 +9,7 @@ class State(rx.State):
     matrix_values: List[List[str]] = [["0" for _ in range(2)] for _ in range(2)]
     constants_values: List[str] = ["0" for _ in range(2)]
     result: str = ""
+    solution: List[str] = []
     is_random: bool = False
     use_fractions: bool = True
 
@@ -51,17 +52,21 @@ class State(rx.State):
 
             if rank_A < rank_Ab:
                 self.result = "El sistema no tiene solución."
+                self.solution = []
             elif rank_A < A.shape[1]:
                 self.result = "El sistema tiene infinitas soluciones."
+                self.solution = []
             else:
                 try:
                     solution = np.linalg.solve(A, b)
-                    formatted_solution = self.format_result(solution)
-                    self.result = "Solución:\n" + "\n".join(formatted_solution)
+                    self.solution = self.format_result(solution)
+                    self.result = "Solución encontrada"
                 except np.linalg.LinAlgError:
                     self.result = "El sistema no tiene una solución única (matriz singular)."
+                    self.solution = []
         except ValueError:
             self.result = "Error: Por favor, ingrese números o fracciones válidas en todas las celdas."
+            self.solution = []
 
     def solve_random(self):
         self.is_random = True
@@ -73,14 +78,46 @@ class State(rx.State):
         
         self.solve_system()
 
+def fraction(numerator: rx.Var, denominator: rx.Var) -> rx.Component:
+    return rx.vstack(
+        rx.text(numerator, font_size="0.9em"),
+        rx.box(height="1px", width="100%", bg="currentColor"),
+        rx.text(denominator, font_size="0.9em"),
+        align="center",
+        spacing="1px",
+        display="inline-flex",
+    )
+
+def fraction_result(solution: rx.Var) -> rx.Component:
+    return rx.hstack(
+        rx.foreach(
+            solution,
+            lambda item: rx.hstack(
+                rx.text(item.split(" = ")[0] + " ="),
+                rx.cond(
+                    item.split(" = ")[1].contains("/"),
+                    fraction(
+                        item.split(" = ")[1].split("/")[0],
+                        item.split(" = ")[1].split("/")[1]
+                    ),
+                    rx.text(item.split(" = ")[1])
+                ),
+                margin="0.5em",
+            )
+        ),
+        flex_wrap="wrap",
+        justify="center",
+        align="center",
+    )
+
 def index():
     return rx.box(
         rx.center(
             rx.vstack(
                 rx.heading("Solucionador de Sistemas de Ecuaciones", size="lg"),
                 rx.hstack(
-                    rx.input(placeholder="Número de ecuaciones", type_="number", value=State.m, on_change=State.set_m),
-                    rx.input(placeholder="Número de variables", type_="number", value=State.n, on_change=State.set_n),
+                    rx.input(placeholder="Número de ecuaciones", type="number", value=State.m, on_change=State.set_m),
+                    rx.input(placeholder="Número de variables", type="number", value=State.n, on_change=State.set_n),
                 ),
                 rx.button("Crear matriz", on_click=State.update_matrix),
                 rx.vstack(
@@ -123,6 +160,11 @@ def index():
                     ),
                 ),
                 rx.text(State.result),
+                rx.cond(
+                    State.solution,
+                    fraction_result(State.solution),
+                    rx.text("No hay solución disponible")
+                ),
                 rx.cond(
                     State.is_random,
                     rx.vstack(

@@ -1,8 +1,8 @@
 *.db
 *.py[cod]
 .web
+__init__.py
 __pycache__/
 assets/external/
 env/
-__init__.py
 favicon.ico

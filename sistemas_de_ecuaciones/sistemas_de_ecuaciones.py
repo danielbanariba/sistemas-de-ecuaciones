@@ -10,6 +10,7 @@ class State(rx.State):
     constants_values: List[str] = ["0" for _ in range(2)]
     result: str = ""
     is_random: bool = False
+    use_fractions: bool = True
 
     def update_matrix(self):
         self.matrix_values = [["0" for _ in range(self.n)] for _ in range(self.m)]
@@ -26,6 +27,17 @@ class State(rx.State):
             return float(Fraction(value))
         except ValueError:
             return 0.0
+
+    def toggle_result_format(self):
+        self.use_fractions = not self.use_fractions
+        if self.result:
+            self.solve_system()
+
+    def format_result(self, solution):
+        if self.use_fractions:
+            return [f"x{i+1} = {Fraction(sol).limit_denominator()}" for i, sol in enumerate(solution)]
+        else:
+            return [f"x{i+1} = {sol:.4f}" for i, sol in enumerate(solution)]
 
     def solve_system(self):
         try:
@@ -44,7 +56,8 @@ class State(rx.State):
             else:
                 try:
                     solution = np.linalg.solve(A, b)
-                    self.result = "Solución:\n" + "\n".join([f"x{i+1} = {Fraction(sol).limit_denominator()}" for i, sol in enumerate(solution)])
+                    formatted_solution = self.format_result(solution)
+                    self.result = "Solución:\n" + "\n".join(formatted_solution)
                 except np.linalg.LinAlgError:
                     self.result = "El sistema no tiene una solución única (matriz singular)."
         except ValueError:
@@ -101,8 +114,14 @@ def index():
                         )
                     )
                 ),
-                rx.button("Resolver", on_click=State.solve_system),
-                rx.button("Generar y Resolver Aleatorio", on_click=State.solve_random),
+                rx.hstack(
+                    rx.button("Resolver", on_click=State.solve_system),
+                    rx.button("Generar y Resolver Aleatorio", on_click=State.solve_random),
+                    rx.button(
+                        rx.cond(State.use_fractions, "Cambiar a Decimales", "Cambiar a Fracciones"),
+                        on_click=State.toggle_result_format
+                    ),
+                ),
                 rx.text(State.result),
                 rx.cond(
                     State.is_random,

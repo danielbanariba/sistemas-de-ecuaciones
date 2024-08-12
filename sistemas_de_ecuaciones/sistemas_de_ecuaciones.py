@@ -78,6 +78,23 @@ class State(rx.State):
         
         self.solve_system()
 
+def github_icon() -> rx.Component:
+    return rx.link(
+        rx.icon(
+            "github",
+            size=40,
+            color="#808080",
+            _hover={"color": "#ffffff"}
+        ),
+        href="https://github.com/danielbanariba/sistemas-de-ecuaciones",
+        position="fixed",
+        top="1em",
+        right="1em",
+        z_index="1000",
+        target="_blank",
+        rel="noopener noreferrer"
+    )
+
 def fraction(numerator: rx.Var, denominator: rx.Var) -> rx.Component:
     return rx.vstack(
         rx.text(numerator, font_size="0.9em"),
@@ -112,6 +129,7 @@ def fraction_result(solution: rx.Var) -> rx.Component:
 
 def index():
     return rx.box(
+        github_icon(),
         rx.center(
             rx.vstack(
                 rx.heading("Solucionador de Sistemas de Ecuaciones", size="lg"),

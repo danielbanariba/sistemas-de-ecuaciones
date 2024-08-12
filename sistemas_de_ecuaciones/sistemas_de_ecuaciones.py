@@ -107,10 +107,23 @@ def index():
                 rx.cond(
                     State.is_random,
                     rx.vstack(
-                        rx.text("Matriz de coeficientes generada:"),
-                        rx.text(State.matrix_values),
-                        rx.text("Términos independientes generados:"),
-                        rx.text(State.constants_values),
+                        rx.heading("Matriz de coeficientes generada:", size="md"),
+                        rx.foreach(
+                            State.matrix_values,
+                            lambda row, i: rx.hstack(
+                                rx.foreach(
+                                    row,
+                                    lambda cell, j: rx.text(cell, width="60px", text_align="center")
+                                )
+                            )
+                        ),
+                        rx.heading("Términos independientes generados:", size="md"),
+                        rx.hstack(
+                            rx.foreach(
+                                State.constants_values,
+                                lambda cell, i: rx.text(cell, width="60px", text_align="center")
+                            )
+                        ),
                     ),
                 ),
                 width="100%",

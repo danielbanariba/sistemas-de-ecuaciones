@@ -2,6 +2,8 @@ import reflex as rx
 import numpy as np
 from typing import List
 from fractions import Fraction
+from sistemas_de_ecuaciones.components.github_icon import github_icon
+from sistemas_de_ecuaciones.components.fraction_result import fraction_result
 
 class State(rx.State):
     m: int = 2
@@ -78,54 +80,14 @@ class State(rx.State):
         
         self.solve_system()
 
-def github_icon() -> rx.Component:
-    return rx.link(
-        rx.icon(
-            "github",
-            size=40,
-            color="#808080",
-            _hover={"color": "#ffffff"}
-        ),
-        href="https://github.com/danielbanariba/sistemas-de-ecuaciones",
-        position="fixed",
-        top="1em",
-        right="1em",
-        z_index="1000",
-        target="_blank",
-        rel="noopener noreferrer"
-    )
-
-def fraction(numerator: rx.Var, denominator: rx.Var) -> rx.Component:
-    return rx.vstack(
-        rx.text(numerator, font_size="0.9em"),
-        rx.box(height="1px", width="100%", bg="currentColor"),
-        rx.text(denominator, font_size="0.9em"),
-        align="center",
-        spacing="1px",
-        display="inline-flex",
-    )
-
-def fraction_result(solution: rx.Var) -> rx.Component:
-    return rx.hstack(
-        rx.foreach(
-            solution,
-            lambda item: rx.hstack(
-                rx.text(item.split(" = ")[0] + " ="),
-                rx.cond(
-                    item.split(" = ")[1].contains("/"),
-                    fraction(
-                        item.split(" = ")[1].split("/")[0],
-                        item.split(" = ")[1].split("/")[1]
-                    ),
-                    rx.text(item.split(" = ")[1])
-                ),
-                margin="0.5em",
-            )
-        ),
-        flex_wrap="wrap",
-        justify="center",
-        align="center",
-    )
+    def clean_all(self):
+        self.m = 2
+        self.n = 2
+        self.matrix_values = [["0" for _ in range(2)] for _ in range(2)]
+        self.constants_values = ["0" for _ in range(2)]
+        self.result = ""
+        self.solution = []
+        self.is_random = False
 
 def index():
     return rx.box(
@@ -176,6 +138,7 @@ def index():
                         rx.cond(State.use_fractions, "Cambiar a Decimales", "Cambiar a Fracciones"),
                         on_click=State.toggle_result_format
                     ),
+                    rx.button("Limpiar todo", on_click=State.clean_all),
                 ),
                 rx.text(State.result),
                 rx.cond(

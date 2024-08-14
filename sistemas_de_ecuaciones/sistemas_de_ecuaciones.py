@@ -14,20 +14,21 @@ class State(rx.State):
     is_random: bool = False
     use_fractions: bool = True
     graph_data: go.Figure = go.Figure()
-    show_graph: bool = False  # Nueva variable para controlar la visualización de la gráfica
+    show_graph: bool = False
+    is_3d: bool = False
 
     def update_matrix(self):
         self.matrix_values = [["0" for _ in range(self.n)] for _ in range(self.m)]
         self.constants_values = ["0" for _ in range(self.m)]
-        self.show_graph = False  # Ocultar la gráfica al actualizar la matriz
+        self.show_graph = False
 
     def set_matrix_value(self, i: int, j: int, value: str):
         self.matrix_values[i][j] = value
-        self.show_graph = False  # Ocultar la gráfica al cambiar un valor
+        self.show_graph = False
 
     def set_constant_value(self, i: int, value: str):
         self.constants_values[i] = value
-        self.show_graph = False  # Ocultar la gráfica al cambiar un valor
+        self.show_graph = False
 
     def parse_fraction(self, value: str) -> float:
         try:
@@ -75,7 +76,8 @@ class State(rx.State):
             self.solution = []
         
         self.update_graph()
-        self.show_graph = self.m == 2 and self.n == 2  # Mostrar la gráfica solo si es un sistema 2x2
+        self.show_graph = self.m in [2, 3] and self.n in [2, 3]
+        self.is_3d = self.m == 3 and self.n == 3
 
     def solve_random(self):
         self.is_random = True
@@ -95,40 +97,78 @@ class State(rx.State):
         self.result = ""
         self.solution = []
         self.is_random = False
-        self.show_graph = False  # Ocultar la gráfica al limpiar todo
+        self.show_graph = False
+        self.is_3d = False
         self.update_graph()
 
     def update_graph(self):
         if self.m == 2 and self.n == 2:
-            coefficients = [[self.parse_fraction(val) for val in row] for row in self.matrix_values[:2]]
-            constants = [self.parse_fraction(val) for val in self.constants_values[:2]]
-            
-            x = np.linspace(-10, 10, 100)
-            y1 = [(constants[0] - coefficients[0][0] * xi) / coefficients[0][1] for xi in x]
-            y2 = [(constants[1] - coefficients[1][0] * xi) / coefficients[1][1] for xi in x]
-
-            det = coefficients[0][0] * coefficients[1][1] - coefficients[1][0] * coefficients[0][1]
-            if det != 0:
-                x_intersect = (constants[0] * coefficients[1][1] - constants[1] * coefficients[0][1]) / det
-                y_intersect = (coefficients[0][0] * constants[1] - coefficients[1][0] * constants[0]) / det
-            else:
-                x_intersect = y_intersect = None
-
-            self.graph_data = go.Figure()
-            self.graph_data.add_trace(go.Scatter(x=x, y=y1, mode='lines', name=f"{coefficients[0][0]}x + {coefficients[0][1]}y = {constants[0]}", line=dict(color='blue')))
-            self.graph_data.add_trace(go.Scatter(x=x, y=y2, mode='lines', name=f"{coefficients[1][0]}x + {coefficients[1][1]}y = {constants[1]}", line=dict(color='red')))
-            if x_intersect is not None and y_intersect is not None:
-                self.graph_data.add_trace(go.Scatter(x=[x_intersect], y=[y_intersect], mode='markers', marker=dict(size=10, color='green'), name='Intersección'))
-
-            self.graph_data.update_layout(
-                title="Sistema de Ecuaciones 2x2",
-                xaxis_title="x",
-                yaxis_title="y",
-                width=600,
-                height=400
-            )
+            self.update_2d_graph()
+        elif self.m == 3 and self.n == 3:
+            self.update_3d_graph()
         else:
             self.graph_data = go.Figure()
+
+    def update_2d_graph(self):
+        coefficients = [[self.parse_fraction(val) for val in row] for row in self.matrix_values[:2]]
+        constants = [self.parse_fraction(val) for val in self.constants_values[:2]]
+        
+        x = np.linspace(-10, 10, 100)
+        y1 = [(constants[0] - coefficients[0][0] * xi) / coefficients[0][1] for xi in x]
+        y2 = [(constants[1] - coefficients[1][0] * xi) / coefficients[1][1] for xi in x]
+
+        det = coefficients[0][0] * coefficients[1][1] - coefficients[1][0] * coefficients[0][1]
+        if det != 0:
+            x_intersect = (constants[0] * coefficients[1][1] - constants[1] * coefficients[0][1]) / det
+            y_intersect = (coefficients[0][0] * constants[1] - coefficients[1][0] * constants[0]) / det
+        else:
+            x_intersect = y_intersect = None
+
+        self.graph_data = go.Figure()
+        self.graph_data.add_trace(go.Scatter(x=x, y=y1, mode='lines', name=f"{coefficients[0][0]}x + {coefficients[0][1]}y = {constants[0]}", line=dict(color='blue')))
+        self.graph_data.add_trace(go.Scatter(x=x, y=y2, mode='lines', name=f"{coefficients[1][0]}x + {coefficients[1][1]}y = {constants[1]}", line=dict(color='red')))
+        if x_intersect is not None and y_intersect is not None:
+            self.graph_data.add_trace(go.Scatter(x=[x_intersect], y=[y_intersect], mode='markers', marker=dict(size=10, color='green'), name='Intersección'))
+
+        self.graph_data.update_layout(
+            title="Sistema de Ecuaciones 2x2",
+            xaxis_title="x",
+            yaxis_title="y",
+            width=600,
+            height=400
+        )
+
+    def update_3d_graph(self):
+        coefficients = [[self.parse_fraction(val) for val in row] for row in self.matrix_values[:3]]
+        constants = [self.parse_fraction(val) for val in self.constants_values[:3]]
+
+        x = y = np.linspace(-10, 10, 50)
+        X, Y = np.meshgrid(x, y)
+
+        Z1 = (constants[0] - coefficients[0][0] * X - coefficients[0][1] * Y) / coefficients[0][2]
+        Z2 = (constants[1] - coefficients[1][0] * X - coefficients[1][1] * Y) / coefficients[1][2]
+        Z3 = (constants[2] - coefficients[2][0] * X - coefficients[2][1] * Y) / coefficients[2][2]
+
+        self.graph_data = go.Figure()
+        self.graph_data.add_trace(go.Surface(x=X, y=Y, z=Z1, name=f"{coefficients[0][0]}x + {coefficients[0][1]}y + {coefficients[0][2]}z = {constants[0]}", colorscale='Blues', opacity=0.8))
+        self.graph_data.add_trace(go.Surface(x=X, y=Y, z=Z2, name=f"{coefficients[1][0]}x + {coefficients[1][1]}y + {coefficients[1][2]}z = {constants[1]}", colorscale='Reds', opacity=0.8))
+        self.graph_data.add_trace(go.Surface(x=X, y=Y, z=Z3, name=f"{coefficients[2][0]}x + {coefficients[2][1]}y + {coefficients[2][2]}z = {constants[2]}", colorscale='Greens', opacity=0.8))
+
+        if self.solution:
+            x, y, z = [self.parse_fraction(sol.split(" = ")[1]) for sol in self.solution]
+            self.graph_data.add_trace(go.Scatter3d(x=[x], y=[y], z=[z], mode='markers', marker=dict(size=5, color='yellow'), name='Solución'))
+
+        self.graph_data.update_layout(
+            title="Sistema de Ecuaciones 3x3",
+            scene=dict(
+                xaxis_title="x",
+                yaxis_title="y",
+                zaxis_title="z",
+                aspectmode='cube'
+            ),
+            width=700,
+            height=700
+        )
 
 def github_icon() -> rx.Component:
     return rx.link(
@@ -240,9 +280,9 @@ def index():
                     rx.text("No hay solución disponible")
                 ),
                 rx.cond(
-                    State.show_graph,  # Cambiado para usar la nueva variable de control
+                    State.show_graph,
                     equation_system_graph(),
-                    rx.text("Resuelva un sistema 2x2 para ver la gráfica")
+                    rx.text("Resuelva un sistema 2x2 o 3x3 para ver la gráfica")
                 ),
                 rx.cond(
                     State.is_random,

@@ -69,28 +69,28 @@ def index():
                     equation_system_graph(),
                     rx.text("Resuelva un sistema 2x2 o 3x3 para ver la gráfica")
                 ),
-                rx.cond(
-                    State.is_random,
-                    rx.vstack(
-                        rx.heading("Matriz de coeficientes generada:", size="md"),
-                        rx.foreach(
-                            State.matrix_values,
-                            lambda row, i: rx.hstack(
-                                rx.foreach(
-                                    row,
-                                    lambda cell, j: rx.text(cell, width="60px", text_align="center")
-                                )
-                            )
-                        ),
-                        rx.heading("Términos independientes generados:", size="md"),
-                        rx.hstack(
-                            rx.foreach(
-                                State.constants_values,
-                                lambda cell, i: rx.text(cell, width="60px", text_align="center")
-                            )
-                        ),
-                    ),
-                ),
+                # rx.cond(
+                #     State.is_random,
+                #     rx.vstack(
+                #         rx.heading("Matriz de coeficientes generada:", size="md"),
+                #         rx.foreach(
+                #             State.matrix_values,
+                #             lambda row, i: rx.hstack(
+                #                 rx.foreach(
+                #                     row,
+                #                     lambda cell, j: rx.text(cell, width="60px", text_align="center")
+                #                 )
+                #             )
+                #         ),
+                #         rx.heading("Términos independientes generados:", size="md"),
+                #         rx.hstack(
+                #             rx.foreach(
+                #                 State.constants_values,
+                #                 lambda cell, i: rx.text(cell, width="60px", text_align="center")
+                #             )
+                #         ),
+                #     ),
+                # ),
                 width="100%",
                 align_items="center",
                 spacing="4",

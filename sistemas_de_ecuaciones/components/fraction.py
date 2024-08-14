@@ -9,5 +9,3 @@ def fraction(numerator: rx.Var, denominator: rx.Var) -> rx.Component:
         spacing="1px",
         display="inline-flex",
     )
-    
-    

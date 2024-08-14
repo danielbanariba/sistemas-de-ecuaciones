@@ -77,7 +77,7 @@ class State(rx.State):
         
         self.update_graph()
         self.show_graph = self.m in [2, 3] and self.n in [2, 3]
-        self.is_3d = self.m == 3 and self.n == 3
+        self.is_3d = (self.m == 3 and self.n == 3) or (self.m == 2 and self.n == 3)
 
     def solve_random(self):
         self.is_random = True
@@ -106,6 +106,8 @@ class State(rx.State):
             self.update_2d_graph()
         elif self.m == 3 and self.n == 3:
             self.update_3d_graph()
+        elif (self.m == 2 and self.n == 3) or (self.m == 3 and self.n == 2):
+            self.update_2x3_or_3x2_graph()
         else:
             self.graph_data = go.Figure()
 
@@ -168,4 +170,55 @@ class State(rx.State):
             ),
             width=700,
             height=700
+        )
+
+    def update_2x3_or_3x2_graph(self):
+        coefficients = [[self.parse_fraction(val) for val in row] for row in self.matrix_values[:3]]
+        constants = [self.parse_fraction(val) for val in self.constants_values[:3]]
+
+        if self.m == 2 and self.n == 3:  # 2x3 system
+            self.plot_2x3_graph(coefficients[:2], constants[:2])
+        elif self.m == 3 and self.n == 2:  # 3x2 system
+            self.plot_3x2_graph(coefficients[:3], constants[:3])
+
+    def plot_2x3_graph(self, coefficients, constants):
+        x = y = np.linspace(-10, 10, 100)
+        X, Y = np.meshgrid(x, y)
+
+        Z1 = (constants[0] - coefficients[0][0]*X - coefficients[0][1]*Y) / coefficients[0][2]
+        Z2 = (constants[1] - coefficients[1][0]*X - coefficients[1][1]*Y) / coefficients[1][2]
+
+        self.graph_data = go.Figure()
+        self.graph_data.add_trace(go.Surface(x=X, y=Y, z=Z1, name=f"{coefficients[0][0]}x + {coefficients[0][1]}y + {coefficients[0][2]}z = {constants[0]}", colorscale='Blues', opacity=0.8))
+        self.graph_data.add_trace(go.Surface(x=X, y=Y, z=Z2, name=f"{coefficients[1][0]}x + {coefficients[1][1]}y + {coefficients[1][2]}z = {constants[1]}", colorscale='Reds', opacity=0.8))
+
+        self.graph_data.update_layout(
+            title="Sistema de Ecuaciones 2x3",
+            scene=dict(
+                xaxis_title="x",
+                yaxis_title="y",
+                zaxis_title="z",
+                aspectmode='cube'
+            ),
+            width=700,
+            height=700
+        )
+
+    def plot_3x2_graph(self, coefficients, constants):
+        x = np.linspace(-10, 10, 100)
+        y1 = [(constants[0] - coefficients[0][0] * xi) / coefficients[0][1] for xi in x]
+        y2 = [(constants[1] - coefficients[1][0] * xi) / coefficients[1][1] for xi in x]
+        y3 = [(constants[2] - coefficients[2][0] * xi) / coefficients[2][1] for xi in x]
+
+        self.graph_data = go.Figure()
+        self.graph_data.add_trace(go.Scatter(x=x, y=y1, mode='lines', name=f"{coefficients[0][0]}x + {coefficients[0][1]}y = {constants[0]}", line=dict(color='blue')))
+        self.graph_data.add_trace(go.Scatter(x=x, y=y2, mode='lines', name=f"{coefficients[1][0]}x + {coefficients[1][1]}y = {constants[1]}", line=dict(color='red')))
+        self.graph_data.add_trace(go.Scatter(x=x, y=y3, mode='lines', name=f"{coefficients[2][0]}x + {coefficients[2][1]}y = {constants[2]}", line=dict(color='green')))
+
+        self.graph_data.update_layout(
+            title="Sistema de Ecuaciones 3x2",
+            xaxis_title="x",
+            yaxis_title="y",
+            width=600,
+            height=400
         )

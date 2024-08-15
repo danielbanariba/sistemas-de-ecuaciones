@@ -48,6 +48,7 @@ def index():
                                         width="100%",
                                     )
                                 ),
+                                padding_bottom="0.5em",
                                 spacing="2",
                                 width="100%",
                             )

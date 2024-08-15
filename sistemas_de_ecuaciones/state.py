@@ -5,8 +5,8 @@ from typing import List
 import plotly.graph_objects as go
 
 class State(rx.State):
-    m: int = 2
-    n: int = 2
+    m: int = ""
+    n: int = ""
     matrix_values: List[List[str]] = [["0" for _ in range(2)] for _ in range(2)]
     constants_values: List[str] = ["0" for _ in range(2)]
     result: str = ""

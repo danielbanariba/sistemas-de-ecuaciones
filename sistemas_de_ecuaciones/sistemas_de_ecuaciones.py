@@ -31,7 +31,7 @@ def index():
                     rx.input(placeholder="Número de ecuaciones", type_="number", value=State.m, on_change=State.set_m, width="100%"),
                     rx.input(placeholder="Número de variables", type_="number", value=State.n, on_change=State.set_n, width="100%"),
                     rx.button("Crear matriz", on_click=State.update_matrix, style=button_style()),
-                    spacing="4",
+                    spacing="2",
                     width="100%",
                 ),
                 rx.vstack(

@@ -2,24 +2,7 @@ import reflex as rx
 from sistemas_de_ecuaciones.components.fraction_result import fraction_result
 from sistemas_de_ecuaciones.components.github_icon import github_icon
 from sistemas_de_ecuaciones.state import State
-
-def equation_system_graph():
-    return rx.plotly(
-        data=State.graph_data,
-        layout={
-            "width": "100%",
-            "height": "100%",
-        },
-        config={"responsive": True}
-    )
-
-def button_style():
-    return {
-        "width": "100%",
-        "bg": "#4299E1",
-        "color": "white",
-        "_hover": {"bg": "#3182CE"},
-    }
+from sistemas_de_ecuaciones.styles.styles import button_style, equation_system_graph
 
 def index():
     return rx.box(
@@ -28,15 +11,32 @@ def index():
             rx.vstack(
                 rx.heading("Solucionador de Sistemas de Ecuaciones", size="lg", text_align="center"),
                 rx.vstack(
-                    rx.input(placeholder="Número de ecuaciones", type_="number", value=State.m, on_change=State.set_m, width="100%"),
-                    rx.input(placeholder="Número de variables", type_="number", value=State.n, on_change=State.set_n, width="100%"),
-                    rx.button("Crear matriz", on_click=State.update_matrix, style=button_style()),
+                    rx.input(
+                        placeholder="Número de ecuaciones", 
+                        type_="number", 
+                        value=State.m, 
+                        on_change=State.set_m, 
+                        width="100%"
+                    ),
+                    rx.input(
+                        placeholder="Número de variables", 
+                        type_="number", 
+                        value=State.n, 
+                        on_change=State.set_n, 
+                        width="100%"
+                    ),
+                    rx.button(
+                        "Crear matriz", 
+                        on_click=State.update_matrix, 
+                        style=button_style
+                    ),
                     spacing="2",
                     width="100%",
                 ),
                 rx.vstack(
                     rx.heading("Matriz de coeficientes:", size="md"),
                     rx.box(
+                        # Crea la matrix segun los inputs de m y n
                         rx.foreach(
                             State.matrix_values,
                             lambda row, i: rx.hstack(
@@ -46,16 +46,16 @@ def index():
                                         value=cell,
                                         on_change=lambda v: State.set_matrix_value(i, j, v),
                                         width="100%",
-                                    )
+                                    ),
                                 ),
                                 padding_bottom="0.5em",
                                 spacing="2",
                                 width="100%",
-                            )
+                            ),
                         ),
                         overflow_x="auto",
                         width="100%",
-                    )
+                    ),
                 ),
                 rx.vstack(
                     rx.heading("Términos independientes:", size="md"),
@@ -77,18 +77,35 @@ def index():
                     )
                 ),
                 rx.vstack(
-                    rx.button("Resolver", on_click=State.solve_system, style=button_style()),
-                    rx.button("Generar y Resolver Aleatorio", on_click=State.solve_random, style=button_style()),
                     rx.button(
-                        rx.cond(State.use_fractions, "Cambiar a Decimales", "Cambiar a Fracciones"),
-                        on_click=State.toggle_result_format,
-                        style=button_style()
+                        "Resolver", 
+                        on_click=State.solve_system, 
+                        style=button_style
                     ),
-                    rx.button("Limpiar todo", on_click=State.clean_all, style=button_style()),
+                    rx.button(
+                        "Generar y Resolver Aleatorio", 
+                        on_click=State.solve_random, 
+                        style=button_style),
+                    rx.button(
+                        rx.cond(
+                            State.use_fractions, 
+                            "Cambiar a Decimales", 
+                            "Cambiar a Fracciones"
+                        ),
+                        on_click=State.toggle_result_format,
+                        style=button_style,
+                    ),
+                    rx.button(
+                        "Limpiar todo", 
+                        on_click=State.clean_all, 
+                        style=button_style
+                    ),
                     spacing="2",
                     width="100%",
                 ),
-                rx.text(State.result),
+                rx.text(
+                    State.result
+                    ),
                 rx.cond(
                     State.solution,
                     fraction_result(State.solution),
@@ -101,6 +118,7 @@ def index():
                     ),
                     rx.text("Resuelva un sistema 2x2 o 3x3 para ver la gráfica")
                 ),
+                padding_top="1em",
                 width="100%",
                 max_width="400px",
                 align_items="center",
@@ -108,8 +126,8 @@ def index():
                 padding="4",
             ),
             width="100%",
-            min_height="100vh",  # Cambiado de height a min_height
-            padding_bottom="4em",  # Añade un padding en la parte inferior
+            min_height="100vh",
+            padding_bottom="4em",
         ),
         background_color="#1a202c",
         color="white",

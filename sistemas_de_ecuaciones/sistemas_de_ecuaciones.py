@@ -2,10 +2,11 @@ import reflex as rx
 from sistemas_de_ecuaciones.components.fraction_result import fraction_result
 from sistemas_de_ecuaciones.components.github_icon import github_icon
 from sistemas_de_ecuaciones.state import State
-from sistemas_de_ecuaciones.styles.styles import button_style, equation_system_graph
+from sistemas_de_ecuaciones.styles.styles import button_style, equation_system_graph, ondas_effect
 
 def index():
     return rx.box(
+        #ondas_effect(),
         github_icon(),
         rx.center(
             rx.vstack(

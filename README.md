@@ -3,41 +3,48 @@
 </div>
 
 ## Ir a la documentacion para la creacion de un entorno virtual
-https://docs.python.org/3/library/venv.html
+<https://docs.python.org/3/library/venv.html>
 
 # 👨‍💻 Configuración Local
 
 1. Clona el repositorio bifurcado en tu máquina local.
-    ```bash 
+
+    ```bash
     git clone https://github.com/<NOMBRE_DE_USUARIO>/sistemas-de-ecuaciones.git
     ```
 
 3. Navega al directorio del proyecto.
+
     ```bash
     cd sistemas-de-ecuaciones
     ```
 
 4. Crea un entorno virtual.
+
     ```bash
     python3 -m venv env
     ```
 
 5. Activa el entorno virtual.
+
     ```bash
     source env/bin/activate
     ```
 
 6. Instala las dependencias.
+
     ```bash
     python -m pip install -r requirements.txt
     ```
 
 7. Inicializa el proyecto reflex.
+
     ```bash
     reflex init
     ```
 
 8. Ejecuta el proyecto.
+
     ```bash
     reflex run
     ```
@@ -45,15 +52,16 @@ https://docs.python.org/3/library/venv.html
 *Abre el navegador y ve a `http://localhost:3000/` para ver el proyeco en acción.*
 
 ## 🗄️ Estructura de carpetas del sistema de ecuaciones
+
 ```bash
-|- sistemas_de_ecuaciones
+|- resuelvesistema
     |- components
       |- fraction.py
       |- fraction_result.py
       |- github_icon.py
     |- styles
       |- styles.py
-    |- sistemas_de_ecuaciones.py
+    |- resuelvesistema.py
     |- state.py
   |- .gitignore
   |- README.md
@@ -63,6 +71,7 @@ https://docs.python.org/3/library/venv.html
 
 <!-- TechStack -->
 ## :space_invader: Tecnologias utilizadas
+
 <p align="left">
 <a href="https://www.python.org/" target="_blank"><img src="/assets/python.svg" alt="Python" width="150" height="150"/> </a>
 <a href="https://reflex.dev/" target="_blank"> <img src="/assets/reflex-light.svg" alt="Reflex" width="150" height="150"/> </a>
@@ -81,7 +90,7 @@ https://docs.python.org/3/library/venv.html
 El proyecto está organizado en varios archivos:
 
 1. `state.py`: Contiene la lógica principal y el manejo del estado de la aplicación.
-2. `sistemas_de_ecuaciones.py`: Define la interfaz de usuario principal.
+2. `resuelvesistema.py`: Define la interfaz de usuario principal.
 3. `styles.py`: Contiene estilos y componentes visuales.
 4. `fraction.py` y `fraction_result.py`: Componentes para mostrar fracciones en la UI.
 
@@ -97,11 +106,12 @@ Este archivo contiene la clase `State` que hereda de `rx.State`. Maneja toda la 
 - Actualización de la visualización gráfica
 
 Métodos principales:
+
 - `solve_system()`: Resuelve el sistema de ecuaciones ingresado.
 - `solve_random()`: Genera y resuelve un sistema aleatorio.
 - `update_graph()`: Actualiza la visualización gráfica del sistema.
 
-#### sistemas_de_ecuaciones.py
+#### resuelvesistema.py
 
 Define la estructura de la interfaz de usuario utilizando componentes de Reflex. Incluye:
 

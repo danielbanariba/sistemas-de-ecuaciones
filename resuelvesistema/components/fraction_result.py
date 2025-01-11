@@ -1,5 +1,5 @@
 import reflex as rx
-from sistemas_de_ecuaciones.components.fraction import fraction
+from resuelvesistema.components.fraction import fraction
 
 def fraction_result(solution: rx.Var) -> rx.Component:
     return rx.hstack(

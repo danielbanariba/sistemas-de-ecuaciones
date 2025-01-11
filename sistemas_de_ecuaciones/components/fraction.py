@@ -6,6 +6,6 @@ def fraction(numerator: rx.Var, denominator: rx.Var) -> rx.Component:
         rx.box(height="1px", width="100%", bg="currentColor"),
         rx.text(denominator, font_size="0.9em"),
         align="center",
-        spacing="1px",
+        spacing="1",
         display="inline-flex",
     )

@@ -10,7 +10,7 @@ def index():
         github_icon(),
         rx.center(
             rx.vstack(
-                rx.heading("Solucionador de Sistemas de Ecuaciones", size="lg", text_align="center"),
+                rx.heading("Solucionador de Sistemas de Ecuaciones", size="1", text_align="center"),
                 rx.vstack(
                     rx.input(
                         placeholder="Número de ecuaciones", 
@@ -35,7 +35,7 @@ def index():
                     width="100%",
                 ),
                 rx.vstack(
-                    rx.heading("Matriz de coeficientes:", size="md"),
+                    rx.heading("Matriz de coeficientes:", size="2"),
                     rx.box(
                         # Crea la matrix segun los inputs de m y n
                         rx.foreach(
@@ -59,7 +59,7 @@ def index():
                     ),
                 ),
                 rx.vstack(
-                    rx.heading("Términos independientes:", size="md"),
+                    rx.heading("Términos independientes:", size="2"),
                     rx.box(
                         rx.hstack(
                             rx.foreach(

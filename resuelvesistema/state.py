@@ -1,6 +1,7 @@
 import reflex as rx
 import numpy as np
 from fractions import Fraction
+from decimal import InvalidOperation
 from typing import List
 import plotly.graph_objects as go
 
@@ -11,31 +12,61 @@ class State(rx.State):
     constants_values: List[str] = ["0" for _ in range(2)]
     result: str = ""
     solution: List[str] = []
+    solution_steps: List[str] = []
+    equations_display: List[str] = []
+    matrix_A_display: List[List[str]] = []
+    vector_b_display: List[str] = []
+    variables_list: List[str] = []
+    rank_A: int = 0
+    rank_Ab: int = 0
+    num_variables: int = 0
+    conclusion_text: str = ""
     is_random: bool = False
     use_fractions: bool = True
     graph_data: go.Figure = go.Figure()
     show_graph: bool = False
     is_3d: bool = False
+    is_solving: bool = False
+    validation_error: str = ""
 
     @rx.var
     def m_int(self) -> int:
         try:
-            return int(self.m) if self.m else 2
+            val = int(self.m) if self.m else 2
+            return max(1, min(10, val))  # Limitar entre 1 y 10
         except ValueError:
             return 2
 
     @rx.var
     def n_int(self) -> int:
         try:
-            return int(self.n) if self.n else 2
+            val = int(self.n) if self.n else 2
+            return max(1, min(10, val))  # Limitar entre 1 y 10
         except ValueError:
             return 2
 
     def set_m(self, value: str):
         self.m = value
+        self._validate_dimensions()
 
     def set_n(self, value: str):
         self.n = value
+        self._validate_dimensions()
+
+    def _validate_dimensions(self):
+        """Validar dimensiones en tiempo real"""
+        try:
+            m_val = int(self.m) if self.m else 2
+            n_val = int(self.n) if self.n else 2
+            if m_val < 1 or m_val > 10 or n_val < 1 or n_val > 10:
+                self.validation_error = "Las dimensiones deben estar entre 1 y 10"
+            else:
+                self.validation_error = ""
+        except ValueError:
+            if self.m or self.n:
+                self.validation_error = "Ingrese números válidos"
+            else:
+                self.validation_error = ""
 
     def update_matrix(self):
         self.matrix_values = [["0" for _ in range(self.n_int)] for _ in range(self.m_int)]
@@ -52,8 +83,8 @@ class State(rx.State):
 
     def parse_fraction(self, value: str) -> float:
         try:
-            return float(Fraction(value))
-        except ValueError:
+            return float(Fraction(value.strip()))
+        except (ValueError, ZeroDivisionError, InvalidOperation, TypeError):
             return 0.0
 
     def toggle_result_format(self):
@@ -68,36 +99,99 @@ class State(rx.State):
             return [f"x{i+1} = {sol:.4f}" for i, sol in enumerate(solution)]
 
     def solve_system(self):
+        self.is_solving = True
+        self.solution_steps = []
+        self.equations_display = []
+        self.matrix_A_display = []
+        self.vector_b_display = []
+        self.conclusion_text = ""
+
         try:
             matrix = np.array([[self.parse_fraction(val) for val in row] for row in self.matrix_values])
             constants = np.array([self.parse_fraction(val) for val in self.constants_values])
             A = matrix
             b = constants
 
-            rank_A = np.linalg.matrix_rank(A)
-            rank_Ab = np.linalg.matrix_rank(np.column_stack((A, b)))
+            # Generar visualización del sistema de ecuaciones
+            self._generate_equations_display(A, b)
 
-            if rank_A < rank_Ab:
-                self.result = "El sistema no tiene solución."
+            # Generar visualización de matrices
+            self._generate_matrix_display(A, b)
+
+            self.rank_A = int(np.linalg.matrix_rank(A))
+            self.rank_Ab = int(np.linalg.matrix_rank(np.column_stack((A, b))))
+            self.num_variables = int(A.shape[1])
+
+            if self.rank_A < self.rank_Ab:
+                self.result = "Sistema Inconsistente"
                 self.solution = []
-            elif rank_A < A.shape[1]:
-                self.result = "El sistema tiene infinitas soluciones."
+                self.conclusion_text = "El sistema NO tiene solución porque Rango(A) < Rango(A|b). Las ecuaciones son contradictorias."
+            elif self.rank_A < A.shape[1]:
+                self.result = "Sistema Indeterminado"
                 self.solution = []
+                self.conclusion_text = "El sistema tiene INFINITAS soluciones porque Rango(A) < número de variables. Hay variables libres."
             else:
                 try:
                     solution = np.linalg.solve(A, b)
                     self.solution = self.format_result(solution)
-                    self.result = "Solución encontrada"
+                    self.result = "Solución Única Encontrada"
+                    self.conclusion_text = "El sistema tiene UNA solución única porque Rango(A) = Rango(A|b) = número de variables."
                 except np.linalg.LinAlgError:
-                    self.result = "El sistema no tiene una solución única (matriz singular)."
+                    self.result = "Matriz Singular"
                     self.solution = []
-        except ValueError:
-            self.result = "Error: Por favor, ingrese números o fracciones válidas en todas las celdas."
+                    self.conclusion_text = "La matriz es singular y no se puede resolver directamente."
+        except ValueError as e:
+            self.result = f"Error de entrada"
             self.solution = []
-        
+            self.conclusion_text = f"Por favor, ingrese números o fracciones válidas. ({str(e)})"
+        except Exception as e:
+            self.result = f"Error inesperado"
+            self.solution = []
+            self.conclusion_text = str(e)
+        finally:
+            self.is_solving = False
+
         self.update_graph()
         self.show_graph = self.m_int in [2, 3] and self.n_int in [2, 3]
         self.is_3d = (self.m_int == 3 and self.n_int == 3) or (self.m_int == 2 and self.n_int == 3)
+
+    def _generate_equations_display(self, A, b):
+        """Generar representación visual del sistema de ecuaciones"""
+        var_names = [f"x{i+1}" for i in range(A.shape[1])]
+        equations = []
+
+        for i in range(A.shape[0]):
+            terms = []
+            for j in range(A.shape[1]):
+                coef = Fraction(A[i, j]).limit_denominator()
+                if coef == 0:
+                    continue
+                elif coef == 1:
+                    term = f"+{var_names[j]}" if terms else var_names[j]
+                elif coef == -1:
+                    term = f"-{var_names[j]}"
+                elif coef > 0:
+                    term = f"+{coef}{var_names[j]}" if terms else f"{coef}{var_names[j]}"
+                else:
+                    term = f"{coef}{var_names[j]}"
+                terms.append(term)
+
+            if not terms:
+                terms = ["0"]
+
+            equation = " ".join(terms) + f" = {Fraction(b[i]).limit_denominator()}"
+            equations.append(equation)
+
+        self.equations_display = equations
+
+    def _generate_matrix_display(self, A, b):
+        """Generar representación visual de las matrices"""
+        self.matrix_A_display = [
+            [str(Fraction(val).limit_denominator()) for val in row]
+            for row in A
+        ]
+        self.vector_b_display = [str(Fraction(val).limit_denominator()) for val in b]
+        self.variables_list = [f"x{i+1}" for i in range(A.shape[1])]
 
     def solve_random(self):
         self.is_random = True
@@ -110,15 +204,25 @@ class State(rx.State):
         self.solve_system()
 
     def clean_all(self):
-        self.m = 2
-        self.n = 2
+        self.m = "2"
+        self.n = "2"
         self.matrix_values = [["0" for _ in range(2)] for _ in range(2)]
         self.constants_values = ["0" for _ in range(2)]
         self.result = ""
         self.solution = []
+        self.solution_steps = []
+        self.equations_display = []
+        self.matrix_A_display = []
+        self.vector_b_display = []
+        self.variables_list = []
+        self.rank_A = 0
+        self.rank_Ab = 0
+        self.num_variables = 0
+        self.conclusion_text = ""
         self.is_random = False
         self.show_graph = False
         self.is_3d = False
+        self.validation_error = ""
         self.update_graph()
 
     def update_graph(self):
@@ -134,7 +238,17 @@ class State(rx.State):
     def update_2d_graph(self):
         coefficients = [[self.parse_fraction(val) for val in row] for row in self.matrix_values[:2]]
         constants = [self.parse_fraction(val) for val in self.constants_values[:2]]
-        
+
+        # Verificar división por cero
+        if coefficients[0][1] == 0 or coefficients[1][1] == 0:
+            self.graph_data = go.Figure()
+            self.graph_data.add_annotation(
+                text="No se puede graficar: coeficiente de y es cero",
+                xref="paper", yref="paper",
+                x=0.5, y=0.5, showarrow=False
+            )
+            return
+
         x = np.linspace(-10, 10, 100)
         y1 = [(constants[0] - coefficients[0][0] * xi) / coefficients[0][1] for xi in x]
         y2 = [(constants[1] - coefficients[1][0] * xi) / coefficients[1][1] for xi in x]
@@ -163,6 +277,16 @@ class State(rx.State):
     def update_3d_graph(self):
         coefficients = [[self.parse_fraction(val) for val in row] for row in self.matrix_values[:3]]
         constants = [self.parse_fraction(val) for val in self.constants_values[:3]]
+
+        # Verificar división por cero
+        if any(coefficients[i][2] == 0 for i in range(3)):
+            self.graph_data = go.Figure()
+            self.graph_data.add_annotation(
+                text="No se puede graficar: coeficiente de z es cero en alguna ecuación",
+                xref="paper", yref="paper",
+                x=0.5, y=0.5, showarrow=False
+            )
+            return
 
         x = y = np.linspace(-10, 10, 50)
         X, Y = np.meshgrid(x, y)
@@ -202,6 +326,16 @@ class State(rx.State):
             self.plot_3x2_graph(coefficients[:3], constants[:3])
 
     def plot_2x3_graph(self, coefficients, constants):
+        # Verificar división por cero
+        if coefficients[0][2] == 0 or coefficients[1][2] == 0:
+            self.graph_data = go.Figure()
+            self.graph_data.add_annotation(
+                text="No se puede graficar: coeficiente de z es cero",
+                xref="paper", yref="paper",
+                x=0.5, y=0.5, showarrow=False
+            )
+            return
+
         x = y = np.linspace(-10, 10, 100)
         X, Y = np.meshgrid(x, y)
 
@@ -225,6 +359,16 @@ class State(rx.State):
         )
 
     def plot_3x2_graph(self, coefficients, constants):
+        # Verificar división por cero
+        if any(coefficients[i][1] == 0 for i in range(3)):
+            self.graph_data = go.Figure()
+            self.graph_data.add_annotation(
+                text="No se puede graficar: coeficiente de y es cero en alguna ecuación",
+                xref="paper", yref="paper",
+                x=0.5, y=0.5, showarrow=False
+            )
+            return
+
         x = np.linspace(-10, 10, 100)
         y1 = [(constants[0] - coefficients[0][0] * xi) / coefficients[0][1] for xi in x]
         y2 = [(constants[1] - coefficients[1][0] * xi) / coefficients[1][1] for xi in x]

@@ -5,8 +5,8 @@ from typing import List
 import plotly.graph_objects as go
 
 class State(rx.State):
-    m: int = ""
-    n: int = ""
+    m: str = ""
+    n: str = ""
     matrix_values: List[List[str]] = [["0" for _ in range(2)] for _ in range(2)]
     constants_values: List[str] = ["0" for _ in range(2)]
     result: str = ""
@@ -17,9 +17,29 @@ class State(rx.State):
     show_graph: bool = False
     is_3d: bool = False
 
+    @rx.var
+    def m_int(self) -> int:
+        try:
+            return int(self.m) if self.m else 2
+        except ValueError:
+            return 2
+
+    @rx.var
+    def n_int(self) -> int:
+        try:
+            return int(self.n) if self.n else 2
+        except ValueError:
+            return 2
+
+    def set_m(self, value: str):
+        self.m = value
+
+    def set_n(self, value: str):
+        self.n = value
+
     def update_matrix(self):
-        self.matrix_values = [["0" for _ in range(self.n)] for _ in range(self.m)]
-        self.constants_values = ["0" for _ in range(self.m)]
+        self.matrix_values = [["0" for _ in range(self.n_int)] for _ in range(self.m_int)]
+        self.constants_values = ["0" for _ in range(self.m_int)]
         self.show_graph = False
 
     def set_matrix_value(self, i: int, j: int, value: str):
@@ -76,13 +96,13 @@ class State(rx.State):
             self.solution = []
         
         self.update_graph()
-        self.show_graph = self.m in [2, 3] and self.n in [2, 3]
-        self.is_3d = (self.m == 3 and self.n == 3) or (self.m == 2 and self.n == 3)
+        self.show_graph = self.m_int in [2, 3] and self.n_int in [2, 3]
+        self.is_3d = (self.m_int == 3 and self.n_int == 3) or (self.m_int == 2 and self.n_int == 3)
 
     def solve_random(self):
         self.is_random = True
-        coefficients = np.random.randint(-10, 11, size=(self.m, self.n)).astype(float)
-        constants = np.random.randint(-10, 11, size=(self.m,)).astype(float)
+        coefficients = np.random.randint(-10, 11, size=(self.m_int, self.n_int)).astype(float)
+        constants = np.random.randint(-10, 11, size=(self.m_int,)).astype(float)
         
         self.matrix_values = [[str(Fraction(val).limit_denominator()) for val in row] for row in coefficients.tolist()]
         self.constants_values = [str(Fraction(val).limit_denominator()) for val in constants.tolist()]
@@ -102,11 +122,11 @@ class State(rx.State):
         self.update_graph()
 
     def update_graph(self):
-        if self.m == 2 and self.n == 2:
+        if self.m_int == 2 and self.n_int == 2:
             self.update_2d_graph()
-        elif self.m == 3 and self.n == 3:
+        elif self.m_int == 3 and self.n_int == 3:
             self.update_3d_graph()
-        elif (self.m == 2 and self.n == 3) or (self.m == 3 and self.n == 2):
+        elif (self.m_int == 2 and self.n_int == 3) or (self.m_int == 3 and self.n_int == 2):
             self.update_2x3_or_3x2_graph()
         else:
             self.graph_data = go.Figure()
@@ -176,9 +196,9 @@ class State(rx.State):
         coefficients = [[self.parse_fraction(val) for val in row] for row in self.matrix_values[:3]]
         constants = [self.parse_fraction(val) for val in self.constants_values[:3]]
 
-        if self.m == 2 and self.n == 3:  # 2x3 system
+        if self.m_int == 2 and self.n_int == 3:  # 2x3 system
             self.plot_2x3_graph(coefficients[:2], constants[:2])
-        elif self.m == 3 and self.n == 2:  # 3x2 system
+        elif self.m_int == 3 and self.n_int == 2:  # 3x2 system
             self.plot_3x2_graph(coefficients[:3], constants[:3])
 
     def plot_2x3_graph(self, coefficients, constants):

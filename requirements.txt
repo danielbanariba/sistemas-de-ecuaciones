@@ -1,3 +1,3 @@
-reflex==0.6.6.post1
-numpy==2.0.1
-plotly==5.23.0
+reflex>=0.8.19
+numpy>=2.3.4
+plotly>=6.4.0
